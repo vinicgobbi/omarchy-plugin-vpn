@@ -185,13 +185,10 @@ Panel {
             width: parent.width
             spacing: Style.space(6)
 
-            Text {
+            PanelSectionHeader {
               text: "TAILSCALE"
-              color: root.dim
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.caption
-              font.bold: true
-              font.letterSpacing: 1.1
+              foreground: root.foreground
+              fontFamily: root.fontFamily
             }
 
             Rectangle {
@@ -277,13 +274,10 @@ Panel {
             width: parent.width
             spacing: Style.space(6)
 
-            Text {
-              text: "OPENVPN (NetworkManager)"
-              color: root.dim
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.caption
-              font.bold: true
-              font.letterSpacing: 1.1
+            PanelSectionHeader {
+              text: "OPENVPN (NETWORKMANAGER)"
+              foreground: root.foreground
+              fontFamily: root.fontFamily
             }
 
             Text {
@@ -546,20 +540,14 @@ Panel {
                     spacing: Style.space(6)
                     visible: service.credDialogOpen && service.credUuid === profile.uuid
 
-                    Rectangle {
-                      width: parent.width
-                      height: 1
-                      color: root.dim
-                      opacity: 0.4
+                    PanelSeparator {
+                      foreground: root.foreground
                     }
 
-                    Text {
-                      text: "Credentials needed"
-                      color: root.dim
-                      font.family: root.fontFamily
-                      font.pixelSize: Style.font.caption
-                      font.bold: true
-                      font.letterSpacing: 1.1
+                    PanelSectionHeader {
+                      text: "CREDENTIALS NEEDED"
+                      foreground: root.foreground
+                      fontFamily: root.fontFamily
                     }
 
                     Text {
@@ -665,20 +653,14 @@ Panel {
                     spacing: Style.space(6)
                     visible: root.renameUuid === profile.uuid
 
-                    Rectangle {
-                      width: parent.width
-                      height: 1
-                      color: root.dim
-                      opacity: 0.4
+                    PanelSeparator {
+                      foreground: root.foreground
                     }
 
-                    Text {
-                      text: "Rename profile"
-                      color: root.dim
-                      font.family: root.fontFamily
-                      font.pixelSize: Style.font.caption
-                      font.bold: true
-                      font.letterSpacing: 1.1
+                    PanelSectionHeader {
+                      text: "RENAME PROFILE"
+                      foreground: root.foreground
+                      fontFamily: root.fontFamily
                     }
 
                     TextField {
@@ -724,11 +706,8 @@ Panel {
                     spacing: Style.space(6)
                     visible: root.pendingDeleteUuid === profile.uuid
 
-                    Rectangle {
-                      width: parent.width
-                      height: 1
-                      color: root.dim
-                      opacity: 0.4
+                    PanelSeparator {
+                      foreground: root.foreground
                     }
 
                     Text {
@@ -776,13 +755,10 @@ Panel {
             spacing: Style.space(8)
             visible: service.tailscaleUp || service.ovProfiles.some(function(p) { return p.active })
 
-            Text {
+            PanelSectionHeader {
               text: "STATUS"
-              color: root.dim
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.caption
-              font.bold: true
-              font.letterSpacing: 1.1
+              foreground: root.foreground
+              fontFamily: root.fontFamily
             }
 
             Rectangle {
@@ -907,11 +883,8 @@ Panel {
                   }
                 }
 
-                Rectangle {
-                  width: parent.width
-                  height: 1
-                  color: root.dim
-                  opacity: 0.4
+                PanelSeparator {
+                  foreground: root.foreground
                   visible: service.tailscaleUp && ovStatusRepeater.count > 0
                 }
 
