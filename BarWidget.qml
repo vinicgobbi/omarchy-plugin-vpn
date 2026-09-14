@@ -30,6 +30,17 @@ Panel {
   implicitHeight: button.implicitHeight
   onOpenedChanged: if (opened) service.refresh()
 
+  // Resolve the bundled import-profile helper from this QML file so the
+  // plugin works from any user's plugin directory and from git checkouts
+  // with spaces in the path.
+  function bundledPath(name) {
+    return decodeURIComponent(String(Qt.resolvedUrl(name)).replace(/^file:\/\//, ""))
+  }
+
+  function importOvProfile() {
+    service.importOvProfile(root.bundledPath("import-profile"))
+  }
+
   VpnService {
     id: service
     refreshIntervalSec: root.refreshIntervalSec
@@ -218,6 +229,39 @@ Panel {
               wrapMode: Text.Wrap
               font.family: root.fontFamily
               font.pixelSize: Style.font.caption
+            }
+
+            // --- Import .ovpn profile: opens the desktop file picker (via
+            // `omarchy file select`) and hands the chosen file to `nmcli
+            // connection import type openvpn`. ---
+            Rectangle {
+              id: importButton
+              width: parent.width
+              height: Style.space(36)
+              radius: Style.space(4)
+              color: importMouse.containsMouse && !service.ovImportBusy
+                ? Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.10) : "transparent"
+              border.width: 1
+              border.color: root.dim
+              opacity: service.ovImportBusy ? 0.6 : 1
+
+              Text {
+                anchors.centerIn: parent
+                text: service.ovImportBusy ? "Choose a profile…" : "Import .ovpn profile…"
+                textFormat: Text.PlainText
+                color: root.foreground
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.caption
+              }
+
+              MouseArea {
+                id: importMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                enabled: !service.ovImportBusy
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.importOvProfile()
+              }
             }
 
             Repeater {

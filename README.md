@@ -12,6 +12,9 @@ inline credential prompts when a connection needs them.
   DNS name, and online/offline peers.
 - **NetworkManager VPN profiles**: toggle any configured connection on/off,
   see live status (connected / connecting / disconnected).
+- **Import `.ovpn` profiles**: pick a `.ovpn`/`.conf` file from the desktop
+  file picker and import it straight into NetworkManager, no terminal
+  needed.
 - Inline credential prompt (same style as the Omarchy Wi-Fi panel) when a
   VPN connection needs a username/password/private-key password that
   NetworkManager doesn't already have cached — only asks for what's
@@ -27,6 +30,9 @@ inline credential prompts when a connection needs them.
 - `tailscale` CLI installed and on `PATH` (optional — the widget still
   works for NetworkManager VPNs if Tailscale isn't installed).
 - `nmcli` (NetworkManager) for VPN connection management.
+- `NetworkManager-openvpn` (the nmcli/NM OpenVPN plugin) to import and
+  connect `.ovpn` profiles.
+- `omarchy file select` (bundled with Omarchy) for the import file picker.
 
 ## Install
 
@@ -57,6 +63,9 @@ omarchy-shell shell rescanPlugins
   you're logged out).
 - **VPN (NetworkManager)** section: one row per connection NetworkManager
   knows about — flip a switch to connect/disconnect it.
+- Click **Import .ovpn profile…** to pick a `.ovpn`/`.conf` file from the
+  desktop file picker; it's imported into NetworkManager and shows up in the
+  list right away.
 - If a connection needs credentials, a form expands inline under that row
   asking only for what's missing (username, password, and/or private key
   password). Submit to connect, or cancel to back out.
@@ -91,6 +100,9 @@ omarchy plugin remove vinicgobbi.vpn
 - Nothing showing up under "VPN (NetworkManager)"? Confirm the connection
   exists via `nmcli connection show` — only entries of type `vpn` or
   `wireguard` are listed.
+- **Importing a `.ovpn` profile fails** — make sure `NetworkManager-openvpn`
+  is installed (`nmcli connection import type openvpn file <path>` needs
+  it), and that the file is a valid OpenVPN client config.
 
 ## License
 

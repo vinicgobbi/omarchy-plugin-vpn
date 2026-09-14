@@ -38,6 +38,7 @@ Item {
   property var ovProfiles: []
   property string ovBusyUuid: ""
   property string lastError: ""
+  readonly property bool ovImportBusy: ovImportProcess.running
 
   // --- Credential prompt state (for OpenVPN/NetworkManager connections) ---
   property bool credDialogOpen: false
@@ -109,6 +110,18 @@ Item {
     root.credDialogOpen = false
     root.credUuid = ""
     root.credError = ""
+  }
+
+  // Opens the desktop file picker (via `omarchy file select`) and imports
+  // the chosen .ovpn/.conf file as a new NetworkManager connection. The
+  // helper script exits 1 both when the user cancels the picker and when
+  // nmcli fails, so we only surface an error when stderr actually has
+  // something to say.
+  function importOvProfile(helperPath) {
+    if (ovImportProcess.running) return
+    root.lastError = ""
+    ovImportProcess.command = [helperPath]
+    ovImportProcess.running = true
   }
 
   // Builds and runs a small shell helper that: optionally sets the (non
@@ -371,6 +384,23 @@ Item {
         } else {
           root.lastError = "OpenVPN: " + (errText || "command failed")
         }
+      } else {
+        root.lastError = ""
+      }
+      settleRefresh.restart()
+    }
+  }
+
+  Process {
+    id: ovImportProcess
+    running: false
+    command: []
+    stdout: StdioCollector { id: ovImportOut; waitForEnd: true }
+    stderr: StdioCollector { id: ovImportErr; waitForEnd: true }
+    onExited: function(exitCode) {
+      if (exitCode !== 0) {
+        var errText = String(ovImportErr.text || "").trim()
+        if (errText !== "") root.lastError = "Import: " + errText
       } else {
         root.lastError = ""
       }
