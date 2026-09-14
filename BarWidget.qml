@@ -41,6 +41,52 @@ Panel {
     service.importOvProfile(root.bundledPath("import-profile"))
   }
 
+  // --- Rename/delete state for OpenVPN profiles ---
+  property string renameUuid: ""
+  property string renameOriginalName: ""
+  property string renameName: ""
+  property string pendingDeleteUuid: ""
+  property string pendingDeleteName: ""
+
+  function requestRename(profile) {
+    cancelDelete()
+    service.cancelCredentials()
+    renameUuid = profile.uuid
+    renameOriginalName = profile.name
+    renameName = profile.name
+  }
+
+  function cancelRename() {
+    renameUuid = ""
+    renameOriginalName = ""
+    renameName = ""
+  }
+
+  function confirmRename() {
+    var nextName = renameName.replace(/[\r\n]/g, "").trim()
+    if (renameUuid === "" || nextName === "" || nextName === renameOriginalName || service.ovBusyUuid !== "") return
+    service.renameOvProfile(renameUuid, nextName)
+    cancelRename()
+  }
+
+  function requestDelete(profile) {
+    cancelRename()
+    service.cancelCredentials()
+    pendingDeleteUuid = profile.uuid
+    pendingDeleteName = profile.name
+  }
+
+  function cancelDelete() {
+    pendingDeleteUuid = ""
+    pendingDeleteName = ""
+  }
+
+  function confirmDelete() {
+    if (pendingDeleteUuid === "" || service.ovBusyUuid !== "") return
+    service.deleteOvProfile(pendingDeleteUuid)
+    cancelDelete()
+  }
+
   VpnService {
     id: service
     refreshIntervalSec: root.refreshIntervalSec
@@ -290,7 +336,7 @@ Panel {
                     spacing: Style.space(10)
 
                     Column {
-                      width: parent.width - ovSwitch.width - Style.space(10)
+                      width: parent.width - ovActions.width - ovSwitch.width - Style.space(20)
                       anchors.verticalCenter: parent.verticalCenter
                       spacing: 0
                       Text {
@@ -309,6 +355,32 @@ Panel {
                         font.pixelSize: Style.font.caption
                         elide: Text.ElideRight
                         width: parent.width
+                      }
+                    }
+
+                    Row {
+                      id: ovActions
+                      anchors.verticalCenter: parent.verticalCenter
+                      spacing: Style.space(4)
+
+                      PanelActionButton {
+                        iconText: "󰏫"
+                        tooltipText: "Rename"
+                        foreground: root.foreground
+                        hoverColor: root.foreground
+                        fontFamily: root.fontFamily
+                        enabled: service.ovBusyUuid === "" && !(service.credDialogOpen && service.credUuid === profile.uuid)
+                        onClicked: root.requestRename(profile)
+                      }
+
+                      PanelActionButton {
+                        iconText: "󰆴"
+                        tooltipText: "Delete"
+                        foreground: root.foreground
+                        hoverColor: bar ? bar.urgent : Color.urgent
+                        fontFamily: root.fontFamily
+                        enabled: service.ovBusyUuid === "" && !(service.credDialogOpen && service.credUuid === profile.uuid)
+                        onClicked: root.requestDelete(profile)
                       }
                     }
 
@@ -440,6 +512,112 @@ Panel {
                         foreground: root.foreground
                         fontFamily: root.fontFamily
                         onClicked: service.submitCredentials(credUserField.text, credPassField.text, credKeyField.text)
+                      }
+                    }
+                  }
+
+                  // --- inline rename prompt, same expand-below-the-row spot
+                  // as the credential/delete prompts. ---
+                  Column {
+                    width: parent.width
+                    spacing: Style.space(6)
+                    visible: root.renameUuid === profile.uuid
+
+                    Rectangle {
+                      width: parent.width
+                      height: 1
+                      color: root.dim
+                      opacity: 0.4
+                    }
+
+                    Text {
+                      text: "Rename profile"
+                      color: root.dim
+                      font.family: root.fontFamily
+                      font.pixelSize: Style.font.caption
+                      font.bold: true
+                      font.letterSpacing: 1.1
+                    }
+
+                    TextField {
+                      id: renameField
+                      width: parent.width
+                      text: root.renameUuid === profile.uuid ? root.renameName : ""
+                      foreground: root.foreground
+                      accent: root.accent
+                      enabled: service.ovBusyUuid === ""
+                      Keys.onEscapePressed: root.cancelRename()
+                      onTextChanged: if (root.renameUuid === profile.uuid) root.renameName = text
+                      onAccepted: root.confirmRename()
+                      onVisibleChanged: if (visible) Qt.callLater(function() { forceActiveFocus(); selectAll() })
+                    }
+
+                    Row {
+                      anchors.right: parent.right
+                      spacing: Style.space(6)
+
+                      PanelActionButton {
+                        iconText: "󰅖"
+                        tooltipText: "Cancel"
+                        foreground: root.foreground
+                        hoverColor: bar ? bar.urgent : Color.urgent
+                        fontFamily: root.fontFamily
+                        onClicked: root.cancelRename()
+                      }
+
+                      PanelActionButton {
+                        enabled: root.renameName.trim() !== "" && root.renameName.trim() !== root.renameOriginalName
+                        iconText: "󰄬"
+                        tooltipText: "Rename"
+                        foreground: root.foreground
+                        fontFamily: root.fontFamily
+                        onClicked: root.confirmRename()
+                      }
+                    }
+                  }
+
+                  // --- inline delete confirmation ---
+                  Column {
+                    width: parent.width
+                    spacing: Style.space(6)
+                    visible: root.pendingDeleteUuid === profile.uuid
+
+                    Rectangle {
+                      width: parent.width
+                      height: 1
+                      color: root.dim
+                      opacity: 0.4
+                    }
+
+                    Text {
+                      width: parent.width
+                      text: "Delete “" + root.pendingDeleteName + "”? This can't be undone."
+                      wrapMode: Text.Wrap
+                      color: root.foreground
+                      font.family: root.fontFamily
+                      font.pixelSize: Style.font.caption
+                    }
+
+                    Row {
+                      anchors.right: parent.right
+                      spacing: Style.space(6)
+
+                      PanelActionButton {
+                        iconText: "󰅖"
+                        tooltipText: "Cancel"
+                        foreground: root.foreground
+                        hoverColor: root.foreground
+                        fontFamily: root.fontFamily
+                        onClicked: root.cancelDelete()
+                      }
+
+                      PanelActionButton {
+                        iconText: "󰆴"
+                        tooltipText: "Delete"
+                        foreground: root.foreground
+                        hoverColor: bar ? bar.urgent : Color.urgent
+                        fontFamily: root.fontFamily
+                        onClicked: root.confirmDelete()
                       }
                     }
                   }

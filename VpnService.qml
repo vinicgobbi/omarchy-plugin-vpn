@@ -100,6 +100,20 @@ Item {
     ovToggleProcess.running = true
   }
 
+  function renameOvProfile(uuid, nextName) {
+    if (ovBusyUuid !== "" || !uuid || !nextName) return
+    ovBusyUuid = uuid
+    ovManageProcess.command = ["nmcli", "connection", "modify", "uuid", uuid, "connection.id", nextName]
+    ovManageProcess.running = true
+  }
+
+  function deleteOvProfile(uuid) {
+    if (ovBusyUuid !== "" || !uuid) return
+    ovBusyUuid = uuid
+    ovManageProcess.command = ["nmcli", "connection", "delete", "uuid", uuid]
+    ovManageProcess.running = true
+  }
+
   function requestCredentials(uuid) {
     root._pendingCredUuid = uuid
     ovDetailProcess.command = ["nmcli", "-t", "-f", "vpn.data", "connection", "show", uuid]
@@ -384,6 +398,23 @@ Item {
         } else {
           root.lastError = "OpenVPN: " + (errText || "command failed")
         }
+      } else {
+        root.lastError = ""
+      }
+      settleRefresh.restart()
+    }
+  }
+
+  Process {
+    id: ovManageProcess
+    running: false
+    command: []
+    stderr: StdioCollector { id: ovManageErr; waitForEnd: true }
+    onExited: function(exitCode) {
+      root.ovBusyUuid = ""
+      if (exitCode !== 0) {
+        var errText = String(ovManageErr.text || "").trim()
+        root.lastError = "OpenVPN: " + (errText || "command failed")
       } else {
         root.lastError = ""
       }

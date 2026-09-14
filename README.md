@@ -15,6 +15,9 @@ inline credential prompts when a connection needs them.
 - **Import `.ovpn` profiles**: pick a `.ovpn`/`.conf` file from the desktop
   file picker and import it straight into NetworkManager, no terminal
   needed.
+- **Rename/delete profiles**: rename or remove any NetworkManager VPN
+  connection right from its row, with an inline confirmation before
+  deleting.
 - Inline credential prompt (same style as the Omarchy Wi-Fi panel) when a
   VPN connection needs a username/password/private-key password that
   NetworkManager doesn't already have cached — only asks for what's
@@ -66,6 +69,9 @@ omarchy-shell shell rescanPlugins
 - Click **Import .ovpn profile…** to pick a `.ovpn`/`.conf` file from the
   desktop file picker; it's imported into NetworkManager and shows up in the
   list right away.
+- Each profile row has a pencil (rename) and trash (delete) icon next to its
+  switch. Rename expands an inline field; delete expands an inline
+  confirmation — both can be cancelled without effect.
 - If a connection needs credentials, a form expands inline under that row
   asking only for what's missing (username, password, and/or private key
   password). Submit to connect, or cancel to back out.
