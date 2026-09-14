@@ -529,7 +529,8 @@ Panel {
                       id: ovSwitch
                       anchors.verticalCenter: parent.verticalCenter
                       checked: profile.active
-                      busy: service.ovBusyUuid === profile.uuid || (service.credDialogOpen && service.credUuid === profile.uuid)
+                      busy: service.ovBusyUuid === profile.uuid ||
+                        (service.credDialogOpen && service.credUuid === profile.uuid && service.credBusy)
                       interactive: service.ovBusyUuid === "" || service.ovBusyUuid === profile.uuid
                       foreground: root.foreground
                       accent: root.accent

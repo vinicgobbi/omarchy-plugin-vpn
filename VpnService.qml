@@ -422,13 +422,22 @@ Item {
     running: false
     property string direction: ""
     property string currentUuid: ""
+    property bool timedOut: false
     command: []
     stderr: StdioCollector { id: ovToggleErr; waitForEnd: true }
+    onStarted: {
+      timedOut = false
+      ovToggleDeadline.restart()
+    }
     onExited: function(exitCode) {
+      ovToggleDeadline.stop()
+      ovToggleKillDelay.stop()
       root.ovBusyUuid = ""
       if (exitCode !== 0) {
         var errText = String(ovToggleErr.text || "").trim()
-        if (direction === "up" && /secret/i.test(errText)) {
+        if (timedOut) {
+          root.lastError = "OpenVPN: connection attempt timed out"
+        } else if (direction === "up" && /secret/i.test(errText)) {
           root.lastError = ""
           root.requestCredentials(currentUuid)
         } else {
@@ -499,10 +508,13 @@ Item {
       // this profile. Secret flags: 0 = saved in the system connection (NM
       // already has it, don't ask), 1 = agent-owned, 2 = never saved (both
       // mean "ask every time"), 4 = not-required bit (this profile doesn't
-      // use that secret at all). A "username" key only exists in vpn.data
-      // for auth types that use one, so its absence means don't ask either.
-      // Fall back to asking for everything only if vpn.data couldn't be
-      // read at all, since then we genuinely don't know what's missing.
+      // use that secret at all). Whether a username is needed at all is a
+      // property of the auth type ("password"/"password-tls" always need
+      // one), not just of whether vpn.data happens to already have a
+      // "username" key — a freshly imported .ovpn profile usually has no
+      // "username" key yet even though the auth type requires one. Fall
+      // back to asking for everything only if vpn.data couldn't be read at
+      // all, since then we genuinely don't know what's missing.
       var needUser = true, needPass = true, needKey = true, existingUser = ""
       if (exitCode === 0) {
         var text = String(ovDetailOut.text || "")
@@ -518,8 +530,10 @@ Item {
         })
         var NOT_REQUIRED = 4
         var ASK_EVERY_TIME = 1 | 2 // AGENT_OWNED | NOT_SAVED
+        var connType = fields.hasOwnProperty("connection-type") ? fields["connection-type"] : ""
+        var passwordAuth = connType === "password" || connType === "password-tls"
         existingUser = fields.hasOwnProperty("username") ? fields["username"] : ""
-        needUser = fields.hasOwnProperty("username") && existingUser === ""
+        needUser = existingUser === "" && (passwordAuth || fields.hasOwnProperty("username"))
         var passFlags = fields.hasOwnProperty("password-flags") ? parseInt(fields["password-flags"], 10) : NaN
         var keyFlags = fields.hasOwnProperty("cert-pass-flags") ? parseInt(fields["cert-pass-flags"], 10) : NaN
         needPass = !isNaN(passFlags) && (passFlags & NOT_REQUIRED) === 0 && (passFlags & ASK_EVERY_TIME) !== 0
@@ -544,26 +558,61 @@ Item {
     running: false
     stdinEnabled: true
     property string pendingStdin: ""
+    property bool timedOut: false
     command: []
     stdout: StdioCollector { id: ovCredOut; waitForEnd: true }
     stderr: StdioCollector { id: ovCredErr; waitForEnd: true }
     onStarted: {
+      timedOut = false
+      ovCredDeadline.restart()
       if (pendingStdin !== "") {
         write(pendingStdin)
         pendingStdin = ""
       }
     }
     onExited: function(exitCode) {
+      ovCredDeadline.stop()
+      ovCredKillDelay.stop()
       root.credBusy = false
       if (exitCode === 0) {
         root.credDialogOpen = false
         root.credUuid = ""
         root.credError = ""
         root.lastError = ""
-        settleRefresh.restart()
       } else {
-        root.credError = String(ovCredErr.text || "Authentication failed").trim()
+        root.credError = timedOut
+          ? "Connection attempt timed out. Check your credentials and try again."
+          : String(ovCredErr.text || "Authentication failed").trim()
       }
+      settleRefresh.restart()
     }
   }
+
+  // Safety nets: if `nmcli connection up` hangs (e.g. the server never
+  // responds to bad/missing credentials) these keep the widget from getting
+  // stuck showing a spinner forever — SIGTERM first, SIGKILL a second later
+  // if that alone didn't stop it.
+  Timer {
+    id: ovToggleDeadline
+    interval: 30000
+    onTriggered: {
+      if (!ovToggleProcess.running) return
+      ovToggleProcess.timedOut = true
+      ovToggleProcess.signal(15)
+      ovToggleKillDelay.restart()
+    }
+  }
+  Timer { id: ovToggleKillDelay; interval: 1000; onTriggered: if (ovToggleProcess.running) ovToggleProcess.signal(9) }
+
+  Timer {
+    id: ovCredDeadline
+    interval: 30000
+    onTriggered: {
+      if (!ovCredProcess.running) return
+      ovCredProcess.timedOut = true
+      ovCredProcess.signal(15)
+      ovCredKillDelay.restart()
+    }
+  }
+  Timer { id: ovCredKillDelay; interval: 1000; onTriggered: if (ovCredProcess.running) ovCredProcess.signal(9) }
 }
