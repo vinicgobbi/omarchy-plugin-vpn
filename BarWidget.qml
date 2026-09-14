@@ -194,10 +194,10 @@ Panel {
             Rectangle {
               width: parent.width
               height: Style.space(46)
-              radius: Style.space(4)
+              radius: Style.cornerRadius
               color: "transparent"
-              border.width: 1
-              border.color: root.dim
+              border.width: Style.normalBorderWidth
+              border.color: Style.normalBorderFor(root.foreground, root.accent)
 
               Row {
                 anchors.fill: parent
@@ -297,11 +297,11 @@ Panel {
               id: importButton
               width: parent.width
               height: Style.space(36)
-              radius: Style.space(4)
+              radius: Style.cornerRadius
               color: importMouse.containsMouse && !service.ovImportBusy
-                ? Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.10) : "transparent"
-              border.width: 1
-              border.color: root.dim
+                ? Style.hoverFillFor(root.foreground, root.accent) : "transparent"
+              border.width: Style.normalBorderWidth
+              border.color: Style.normalBorderFor(root.foreground, root.accent)
               opacity: service.ovImportBusy ? 0.6 : 1
 
               Text {
@@ -329,9 +329,9 @@ Panel {
             Rectangle {
               width: parent.width
               visible: service.importDnsPromptUuid !== ""
-              radius: Style.space(4)
+              radius: Style.cornerRadius
               color: "transparent"
-              border.width: 1
+              border.width: Style.normalBorderWidth
               border.color: root.accent
               height: dnsPromptColumn.implicitHeight + Style.space(20)
 
@@ -391,11 +391,11 @@ Panel {
                     id: dnsSkipButton
                     width: (parent.width - Style.space(8)) / 2
                     height: Style.space(32)
-                    radius: Style.space(4)
+                    radius: Style.cornerRadius
                     color: dnsSkipMouse.containsMouse
-                      ? Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.08) : "transparent"
-                    border.width: 1
-                    border.color: root.dim
+                      ? Style.hoverFillFor(root.foreground, root.accent) : "transparent"
+                    border.width: Style.normalBorderWidth
+                    border.color: Style.normalBorderFor(root.foreground, root.accent)
 
                     Text {
                       anchors.centerIn: parent
@@ -418,10 +418,10 @@ Panel {
                     id: dnsApplyButton
                     width: (parent.width - Style.space(8)) / 2
                     height: Style.space(32)
-                    radius: Style.space(4)
+                    radius: Style.cornerRadius
                     color: dnsApplyMouse.containsMouse
                       ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.18) : Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.10)
-                    border.width: 1
+                    border.width: Style.normalBorderWidth
                     border.color: root.accent
 
                     Text {
@@ -452,10 +452,10 @@ Panel {
                 readonly property var profile: modelData
                 width: content.width
                 height: ovDelegateColumn.implicitHeight + Style.space(20)
-                radius: Style.space(4)
+                radius: Style.cornerRadius
                 color: "transparent"
-                border.width: 1
-                border.color: root.dim
+                border.width: Style.normalBorderWidth
+                border.color: Style.normalBorderFor(root.foreground, root.accent)
 
                 Column {
                   id: ovDelegateColumn
@@ -763,10 +763,10 @@ Panel {
 
             Rectangle {
               width: parent.width
-              radius: Style.space(4)
+              radius: Style.cornerRadius
               color: "transparent"
-              border.width: 1
-              border.color: root.dim
+              border.width: Style.normalBorderWidth
+              border.color: Style.normalBorderFor(root.foreground, root.accent)
               height: statusColumn.implicitHeight + Style.space(20)
 
               Column {
