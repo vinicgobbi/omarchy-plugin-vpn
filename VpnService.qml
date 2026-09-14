@@ -321,8 +321,8 @@ Item {
       if (exitCode !== 0) {
         var errText = String(tsToggleErr.text || "").trim()
         if (/operator|access denied|must be root|permission denied/i.test(errText)) {
-          root.lastError = "Tailscale: você não é o operator configurado. " +
-            "Rode no terminal: " + root.tailscaleOperatorFixCommand
+          root.lastError = "Tailscale: you're not the configured operator. " +
+            "Run in a terminal: " + root.tailscaleOperatorFixCommand
         } else {
           root.lastError = "Tailscale: " + (errText || "command failed")
         }

@@ -254,7 +254,7 @@ Panel {
 
               Text {
                 width: parent.width
-                text: "Operator do Tailscale não é " + service.tailscaleCurrentUser + " — comandos vão pedir sudo."
+                text: "Tailscale operator isn't " + service.tailscaleCurrentUser + " — commands will need sudo."
                 wrapMode: Text.Wrap
                 color: bar ? bar.urgent : Color.urgent
                 font.family: root.fontFamily
@@ -262,7 +262,7 @@ Panel {
               }
               Text {
                 width: parent.width
-                text: "Corrija com: " + service.tailscaleOperatorFixCommand
+                text: "Fix with: " + service.tailscaleOperatorFixCommand
                 wrapMode: Text.Wrap
                 textFormat: Text.PlainText
                 color: root.dim
