@@ -14,7 +14,9 @@ inline credential prompts when a connection needs them.
   see live status (connected / connecting / disconnected).
 - **Import `.ovpn` profiles**: pick a `.ovpn`/`.conf` file from the desktop
   file picker and import it straight into NetworkManager, no terminal
-  needed.
+  needed. If the file has `dhcp-option DNS`/`DOMAIN` lines — which
+  NetworkManager's OpenVPN import silently drops — you're asked whether to
+  apply them to the new connection (recommended: yes).
 - **Rename/delete profiles**: rename or remove any NetworkManager VPN
   connection right from its row, with an inline confirmation before
   deleting.
@@ -68,7 +70,13 @@ omarchy-shell shell rescanPlugins
   knows about — flip a switch to connect/disconnect it.
 - Click **Import .ovpn profile…** to pick a `.ovpn`/`.conf` file from the
   desktop file picker; it's imported into NetworkManager and shows up in the
-  list right away.
+  list right away. Opening the native file picker closes this popup (same as
+  clicking outside it) — the widget reopens itself automatically once the
+  import finishes, so you land back on the result instead of having to
+  reopen it by hand. If the file carries its own DNS server(s) or search
+  domain(s), a card appears asking whether to apply them to the imported
+  connection — **Apply (recommended)** sets `ipv4.dns`/`ipv4.dns-search` on
+  it, **Skip** leaves it as NetworkManager imported it.
 - Each profile row has a pencil (rename) and trash (delete) icon next to its
   switch. Rename expands an inline field; delete expands an inline
   confirmation — both can be cancelled without effect.

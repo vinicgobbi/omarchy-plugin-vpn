@@ -6,4 +6,29 @@ if [[ -z "$profile_path" ]]; then
   exit 1
 fi
 
-nmcli connection import type openvpn file "$profile_path"
+import_output=$(nmcli connection import type openvpn file "$profile_path" 2>&1)
+import_status=$?
+
+if [[ $import_status -ne 0 ]]; then
+  echo "$import_output" >&2
+  exit "$import_status"
+fi
+
+uuid=$(printf '%s\n' "$import_output" | sed -n "s/.*(\\([0-9a-fA-F-]\\{36\\}\\)).*/\\1/p")
+name=$(printf '%s\n' "$import_output" | sed -n "s/^Connection '\\(.*\\)' (.*/\\1/p")
+
+if [[ -z "$uuid" ]]; then
+  echo "$import_output" >&2
+  exit 1
+fi
+
+# NetworkManager's OpenVPN import plugin doesn't carry over DNS/search-domain
+# pushed via `dhcp-option` lines in the client config, so pull them out here
+# and hand them back for the caller to offer applying separately.
+dns_list=$(grep -iE '^[[:space:]]*dhcp-option[[:space:]]+DNS[[:space:]]' "$profile_path" | awk '{print $3}' | tr '\n' ' ' | sed 's/[[:space:]]*$//')
+domain_list=$(grep -iE '^[[:space:]]*dhcp-option[[:space:]]+DOMAIN(-SEARCH)?[[:space:]]' "$profile_path" | awk '{print $3}' | tr '\n' ' ' | sed 's/[[:space:]]*$//')
+
+printf 'UUID\t%s\n' "$uuid"
+printf 'NAME\t%s\n' "$name"
+printf 'DNS\t%s\n' "$dns_list"
+printf 'DOMAINS\t%s\n' "$domain_list"

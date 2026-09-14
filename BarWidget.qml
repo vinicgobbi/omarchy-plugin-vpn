@@ -37,8 +37,27 @@ Panel {
     return decodeURIComponent(String(Qt.resolvedUrl(name)).replace(/^file:\/\//, ""))
   }
 
+  // The native file picker (`omarchy file select`) opening as its own
+  // window causes this popup to auto-close (same as it would for a click
+  // outside), so the import result — and the DNS/domain prompt below —
+  // would otherwise be invisible until the user reopens the widget by
+  // hand. Remember we were mid-import and pop the panel back open once the
+  // helper process exits.
+  property bool _reopenAfterImport: false
+
   function importOvProfile() {
+    root._reopenAfterImport = true
     service.importOvProfile(root.bundledPath("import-profile"))
+  }
+
+  Connections {
+    target: service
+    function onOvImportBusyChanged() {
+      if (!service.ovImportBusy && root._reopenAfterImport) {
+        root._reopenAfterImport = false
+        root.open()
+      }
+    }
   }
 
   // --- Rename/delete state for OpenVPN profiles ---
@@ -307,6 +326,128 @@ Panel {
                 enabled: !service.ovImportBusy
                 cursorShape: Qt.PointingHandCursor
                 onClicked: root.importOvProfile()
+              }
+            }
+
+            // --- Post-import DNS/domain prompt: NetworkManager doesn't
+            // import `dhcp-option DNS`/`DOMAIN` lines from the .ovpn file,
+            // so ask whether to apply the ones this profile pushed. ---
+            Rectangle {
+              width: parent.width
+              visible: service.importDnsPromptUuid !== ""
+              radius: Style.space(4)
+              color: "transparent"
+              border.width: 1
+              border.color: root.accent
+              height: dnsPromptColumn.implicitHeight + Style.space(20)
+
+              Column {
+                id: dnsPromptColumn
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: Style.space(10)
+                anchors.rightMargin: Style.space(10)
+                spacing: Style.space(6)
+
+                Text {
+                  width: parent.width
+                  text: "Apply DNS/domain from “" + service.importDnsPromptName + "”?"
+                  wrapMode: Text.Wrap
+                  color: root.foreground
+                  font.family: root.fontFamily
+                  font.pixelSize: Style.font.body
+                  font.bold: true
+                }
+
+                Text {
+                  width: parent.width
+                  visible: service.importDnsList.length > 0
+                  text: "DNS: " + service.importDnsList.join(", ")
+                  wrapMode: Text.Wrap
+                  color: root.dim
+                  font.family: root.fontFamily
+                  font.pixelSize: Style.font.caption
+                }
+
+                Text {
+                  width: parent.width
+                  visible: service.importDomainList.length > 0
+                  text: "Domain: " + service.importDomainList.join(", ")
+                  wrapMode: Text.Wrap
+                  color: root.dim
+                  font.family: root.fontFamily
+                  font.pixelSize: Style.font.caption
+                }
+
+                Text {
+                  width: parent.width
+                  text: "NetworkManager doesn't import these automatically. Recommended: apply."
+                  wrapMode: Text.Wrap
+                  color: root.dim
+                  font.family: root.fontFamily
+                  font.pixelSize: Style.font.caption
+                }
+
+                Row {
+                  width: parent.width
+                  spacing: Style.space(8)
+
+                  Rectangle {
+                    id: dnsSkipButton
+                    width: (parent.width - Style.space(8)) / 2
+                    height: Style.space(32)
+                    radius: Style.space(4)
+                    color: dnsSkipMouse.containsMouse
+                      ? Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.08) : "transparent"
+                    border.width: 1
+                    border.color: root.dim
+
+                    Text {
+                      anchors.centerIn: parent
+                      text: "Skip"
+                      color: root.dim
+                      font.family: root.fontFamily
+                      font.pixelSize: Style.font.caption
+                    }
+
+                    MouseArea {
+                      id: dnsSkipMouse
+                      anchors.fill: parent
+                      hoverEnabled: true
+                      cursorShape: Qt.PointingHandCursor
+                      onClicked: service.dismissImportDnsPrompt()
+                    }
+                  }
+
+                  Rectangle {
+                    id: dnsApplyButton
+                    width: (parent.width - Style.space(8)) / 2
+                    height: Style.space(32)
+                    radius: Style.space(4)
+                    color: dnsApplyMouse.containsMouse
+                      ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.18) : Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.10)
+                    border.width: 1
+                    border.color: root.accent
+
+                    Text {
+                      anchors.centerIn: parent
+                      text: "Apply (recommended)"
+                      color: root.accent
+                      font.family: root.fontFamily
+                      font.pixelSize: Style.font.caption
+                      font.bold: true
+                    }
+
+                    MouseArea {
+                      id: dnsApplyMouse
+                      anchors.fill: parent
+                      hoverEnabled: true
+                      cursorShape: Qt.PointingHandCursor
+                      onClicked: service.applyImportedDns()
+                    }
+                  }
+                }
               }
             }
 

@@ -40,6 +40,15 @@ Item {
   property string lastError: ""
   readonly property bool ovImportBusy: ovImportProcess.running
 
+  // --- Post-import DNS/domain prompt: NetworkManager's OpenVPN import
+  // doesn't carry over `dhcp-option DNS`/`DOMAIN` lines from the client
+  // config, so when the just-imported profile has any, we ask before
+  // applying them to ipv4.dns/ipv4.dns-search. ---
+  property string importDnsPromptUuid: ""
+  property string importDnsPromptName: ""
+  property var importDnsList: []
+  property var importDomainList: []
+
   // --- Credential prompt state (for OpenVPN/NetworkManager connections) ---
   property bool credDialogOpen: false
   property string credUuid: ""
@@ -136,6 +145,33 @@ Item {
     root.lastError = ""
     ovImportProcess.command = [helperPath]
     ovImportProcess.running = true
+  }
+
+  function dismissImportDnsPrompt() {
+    root.importDnsPromptUuid = ""
+    root.importDnsPromptName = ""
+    root.importDnsList = []
+    root.importDomainList = []
+  }
+
+  // Applies the DNS/search-domain values pulled out of the just-imported
+  // .ovpn file to the new NetworkManager connection.
+  function applyImportedDns() {
+    if (ovBusyUuid !== "" || importDnsPromptUuid === "") return
+    var uuid = importDnsPromptUuid
+    var args = ["nmcli", "connection", "modify", "uuid", uuid]
+    if (importDnsList.length > 0) {
+      args.push("ipv4.dns")
+      args.push(importDnsList.join(" "))
+    }
+    if (importDomainList.length > 0) {
+      args.push("ipv4.dns-search")
+      args.push(importDomainList.join(" "))
+    }
+    root.dismissImportDnsPrompt()
+    ovBusyUuid = uuid
+    ovManageProcess.command = args
+    ovManageProcess.running = true
   }
 
   // Builds and runs a small shell helper that: optionally sets the (non
@@ -434,6 +470,20 @@ Item {
         if (errText !== "") root.lastError = "Import: " + errText
       } else {
         root.lastError = ""
+        var fields = {}
+        String(ovImportOut.text || "").split("\n").forEach(function(line) {
+          var tab = line.indexOf("\t")
+          if (tab < 0) return
+          fields[line.substring(0, tab)] = line.substring(tab + 1)
+        })
+        var dns = String(fields.DNS || "").trim()
+        var domains = String(fields.DOMAINS || "").trim()
+        if (fields.UUID && (dns !== "" || domains !== "")) {
+          root.importDnsPromptUuid = fields.UUID
+          root.importDnsPromptName = fields.NAME || fields.UUID
+          root.importDnsList = dns === "" ? [] : dns.split(/\s+/)
+          root.importDomainList = domains === "" ? [] : domains.split(/\s+/)
+        }
       }
       settleRefresh.restart()
     }
