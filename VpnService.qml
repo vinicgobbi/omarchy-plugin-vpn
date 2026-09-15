@@ -174,17 +174,30 @@ Item {
     ovManageProcess.running = true
   }
 
-  // Builds and runs a small shell helper that: optionally sets the (non
-  // secret) username on the connection, writes only the secrets that were
-  // actually requested to a 0600 temp file, activates the connection with
-  // that file, then removes it. Secret values are streamed over stdin so
-  // they never appear in the process argument list (visible via /proc or ps
-  // to other local users); only the uuid, flags, and username travel as
+  // Builds and runs a small shell helper that: sets the (non secret)
+  // username on the connection, writes only the secrets that were actually
+  // requested to a 0600 temp file, activates the connection with that file,
+  // then removes it. Secret values are streamed over stdin so they never
+  // appear in the process argument list (visible via /proc or ps to other
+  // local users); only the uuid, flags, username, and save choice travel as
   // arguments.
-  function submitCredentials(username, password, keyPassword) {
+  //
+  // When `save` is true and the connection comes up successfully, the
+  // secrets just used are additionally written onto the connection itself
+  // (password-flags/cert-pass-flags set to 0, the "saved" value) so the next
+  // activation won't need them at all. That nmcli call does carry the
+  // secret as a plain argument — briefly visible via ps to other local
+  // users — which is unavoidable with nmcli's modify command; it only runs
+  // for the fields the user opted into saving. When `save` is false, a
+  // username that wasn't already saved is removed again after connecting so
+  // the next attempt still asks for everything, matching what the user
+  // chose.
+  function submitCredentials(username, password, keyPassword, save) {
     if (root.credUuid === "") return
     var hasPass = root.credNeedPassword && password !== ""
     var hasKey = root.credNeedKeyPassword && keyPassword !== ""
+    var doSave = !!save
+    var usernameWasSaved = root.credExistingUsername !== ""
     var stdinLines = []
     if (hasPass) stdinLines.push(password)
     if (hasKey) stdinLines.push(keyPassword)
@@ -195,6 +208,8 @@ Item {
       "haspass=\"$2\"\n" +
       "haskey=\"$3\"\n" +
       "username=\"$4\"\n" +
+      "save=\"$5\"\n" +
+      "usernamewassaved=\"$6\"\n" +
       "if [ -n \"$username\" ]; then nmcli connection modify \"$uuid\" +vpn.data username=\"$username\" >/dev/null; fi\n" +
       "f=$(mktemp)\n" +
       "chmod 600 \"$f\"\n" +
@@ -203,12 +218,22 @@ Item {
       "nmcli connection up uuid \"$uuid\" passwd-file \"$f\"\n" +
       "rc=$?\n" +
       "rm -f \"$f\"\n" +
+      "if [ \"$rc\" = \"0\" ]; then\n" +
+      "  if [ \"$save\" = \"1\" ]; then\n" +
+      "    args=()\n" +
+      "    if [ \"$haspass\" = \"1\" ]; then args+=(+vpn.data password-flags=0 +vpn.secrets \"password=$pass\"); fi\n" +
+      "    if [ \"$haskey\" = \"1\" ]; then args+=(+vpn.data cert-pass-flags=0 +vpn.secrets \"cert-pass=$keypass\"); fi\n" +
+      "    if [ \"${#args[@]}\" -gt 0 ]; then nmcli connection modify \"$uuid\" \"${args[@]}\" >/dev/null 2>&1 || true; fi\n" +
+      "  elif [ -n \"$username\" ] && [ \"$usernamewassaved\" != \"1\" ]; then\n" +
+      "    nmcli connection modify \"$uuid\" -vpn.data username >/dev/null 2>&1 || true\n" +
+      "  fi\n" +
+      "fi\n" +
       "exit $rc\n"
 
     root.credBusy = true
     root.credError = ""
     ovCredProcess.pendingStdin = stdinLines.length > 0 ? (stdinLines.join("\n") + "\n") : ""
-    ovCredProcess.command = ["bash", "-c", script, "_", root.credUuid, hasPass ? "1" : "0", hasKey ? "1" : "0", (username || "")]
+    ovCredProcess.command = ["bash", "-c", script, "_", root.credUuid, hasPass ? "1" : "0", hasKey ? "1" : "0", (username || ""), doSave ? "1" : "0", usernameWasSaved ? "1" : "0"]
     ovCredProcess.running = true
   }
 

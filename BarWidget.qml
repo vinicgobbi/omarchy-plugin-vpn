@@ -67,6 +67,11 @@ Panel {
   property string pendingDeleteUuid: ""
   property string pendingDeleteName: ""
 
+  // Whether to persist the credentials just entered on the NetworkManager
+  // connection (so it won't ask again) or leave them as ask-every-time.
+  // Reset to the default each time a new credential prompt opens.
+  property bool credSaveCredentials: true
+
   function requestRename(profile) {
     cancelDelete()
     service.cancelCredentials()
@@ -541,6 +546,7 @@ Panel {
                     width: parent.width
                     spacing: Style.space(6)
                     visible: service.credDialogOpen && service.credUuid === profile.uuid
+                    onVisibleChanged: if (visible) root.credSaveCredentials = true
 
                     PanelSeparator {
                       foreground: root.foreground
@@ -610,6 +616,17 @@ Panel {
                       onVisibleChanged: if (visible && !credUserField.visible && !credPassField.visible) Qt.callLater(forceActiveFocus)
                     }
 
+                    Toggle {
+                      width: parent.width
+                      label: "Save credentials"
+                      description: "Store them in NetworkManager so you won't be asked again."
+                      foreground: root.foreground
+                      accent: root.accent
+                      fontFamily: root.fontFamily
+                      checked: root.credSaveCredentials
+                      onClicked: root.credSaveCredentials = !root.credSaveCredentials
+                    }
+
                     Row {
                       anchors.right: parent.right
                       spacing: Style.space(6)
@@ -643,7 +660,7 @@ Panel {
                         tooltipText: "Connect"
                         foreground: root.foreground
                         fontFamily: root.fontFamily
-                        onClicked: service.submitCredentials(credUserField.text, credPassField.text, credKeyField.text)
+                        onClicked: service.submitCredentials(credUserField.text, credPassField.text, credKeyField.text, root.credSaveCredentials)
                       }
                     }
                   }
