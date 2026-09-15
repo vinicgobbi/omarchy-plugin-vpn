@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "vinicgobbi.vpn",
   "name": "VPN Manager",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "author": "Vinicius",
   "license": "MIT",
   "description": "Single bar icon and popup panel to view and toggle both Tailscale and NetworkManager OpenVPN connections.",
