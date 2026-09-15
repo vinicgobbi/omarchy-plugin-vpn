@@ -34,20 +34,23 @@ jobs:
             echo "qmllint not found after install" >&2
             exit 1
           fi
-          echo "Using $QMLLINT"
+          "$QMLLINT" --version
           # This plugin's qs.Commons/qs.Ui imports only resolve inside a real
           # Omarchy/Quickshell install, which isn't available here — so import
           # resolution and everything that cascades from it (unqualified
-          # access, unresolved/missing types, required-property checks on
+          # access, unresolved types/properties, required-property checks on
           # types qmllint couldn't resolve, Process's onExited signature) are
-          # disabled. That still leaves qmllint doing real syntax validation:
-          # a genuinely malformed file fails with a `[syntax]` error and a
-          # non-zero exit regardless of these flags.
+          # disabled. Category names match qmllint 6.4 (what ubuntu-latest's
+          # qt6-declarative-dev-tools ships) — verified against that exact
+          # version in a matching container, not just locally, since a newer
+          # Qt renames/splits several of these. That still leaves qmllint
+          # doing real syntax validation: a genuinely malformed file fails
+          # with a "Expected token" error and non-zero exit regardless of
+          # these flags.
           find . -name '*.qml' -not -path './.git/*' -print0 | xargs -0 "$QMLLINT" \
             --import disable \
             --unqualified disable \
-            --unresolved-type disable \
-            --missing-property disable \
-            --missing-type disable \
+            --type disable \
+            --property disable \
             --required disable \
-            --signal-handler-parameters disable
+            --signal disable
