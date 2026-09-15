@@ -191,13 +191,14 @@ Panel {
               fontFamily: root.fontFamily
             }
 
-            Rectangle {
+            CursorSurface {
               width: parent.width
               height: Style.space(46)
-              radius: Style.cornerRadius
-              color: "transparent"
-              border.width: Style.normalBorderWidth
-              border.color: Style.normalBorderFor(root.foreground, root.accent)
+              hasCursor: tsRowHover.hovered
+              foreground: root.foreground
+              accent: root.accent
+
+              HoverHandler { id: tsRowHover }
 
               Row {
                 anchors.fill: parent
@@ -447,15 +448,16 @@ Panel {
 
             Repeater {
               model: service.ovProfiles
-              delegate: Rectangle {
+              delegate: CursorSurface {
                 required property var modelData
                 readonly property var profile: modelData
                 width: content.width
                 height: ovDelegateColumn.implicitHeight + Style.space(20)
-                radius: Style.cornerRadius
-                color: "transparent"
-                border.width: Style.normalBorderWidth
-                border.color: Style.normalBorderFor(root.foreground, root.accent)
+                hasCursor: ovRowHover.hovered
+                foreground: root.foreground
+                accent: root.accent
+
+                HoverHandler { id: ovRowHover }
 
                 Column {
                   id: ovDelegateColumn
@@ -761,24 +763,12 @@ Panel {
               fontFamily: root.fontFamily
             }
 
-            Rectangle {
+            Column {
+              id: statusColumn
               width: parent.width
-              radius: Style.cornerRadius
-              color: "transparent"
-              border.width: Style.normalBorderWidth
-              border.color: Style.normalBorderFor(root.foreground, root.accent)
-              height: statusColumn.implicitHeight + Style.space(20)
+              spacing: Style.space(10)
 
-              Column {
-                id: statusColumn
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.leftMargin: Style.space(10)
-                anchors.rightMargin: Style.space(10)
-                spacing: Style.space(10)
-
-                // --- Tailscale status ---
+              // --- Tailscale status ---
                 Column {
                   width: parent.width
                   spacing: Style.space(4)
@@ -996,4 +986,3 @@ Panel {
       }
     }
   }
-}
