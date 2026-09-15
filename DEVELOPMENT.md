@@ -25,3 +25,25 @@ scripts/dev-uninstall.sh
 
 Both scripts read the plugin id from `manifest.json`, so they keep working
 if the plugin is ever renamed.
+
+## Commits and versioning
+
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)
+(`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, ...), enforced and managed
+with [Commitizen](https://commitizen-tools.github.io/commitizen/) (config in
+`.cz.toml`). To write a commit interactively instead of typing the prefix by
+hand:
+
+```bash
+uvx --from commitizen cz commit
+```
+
+Versioning is derived from that history, not chosen by hand: `manifest.json`'s
+`version` and `CHANGELOG.md` are only ever updated by `cz bump`, which the
+`Bump version` GitHub Actions workflow runs automatically on `main` after CI
+passes, if the commits since the last tag are eligible (any `feat`/`fix`/
+`BREAKING CHANGE` — see [`bump.yml`](.github/workflows/bump.yml)). It also
+tags the bump and publishes a GitHub release from the new changelog section.
+Don't hand-edit the version in `manifest.json` or write to `CHANGELOG.md`
+directly — run `cz bump` locally (`uvx --from commitizen cz bump --changelog`)
+only if you need to cut a release outside of that automation.

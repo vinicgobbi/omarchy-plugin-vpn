@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Validate manifest.json
+        run: python3 -c "import json; json.load(open('manifest.json')); print('manifest.json is valid JSON')"
+
+      - name: Shellcheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: "."
+          ignore_paths: >-
+            .git
+
+      - name: Install QML tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-declarative-dev-tools
+
+      - name: Lint QML files
+        run: |
+          QMLLINT="$(command -v qmllint || find /usr/lib/qt6 -type f -name qmllint | head -n1)"
+          if [ -z "$QMLLINT" ]; then
+            echo "qmllint not found after install" >&2
+            exit 1
+          fi
+          echo "Using $QMLLINT"
+          find . -name '*.qml' -not -path './.git/*' -print0 | xargs -0 "$QMLLINT"
