@@ -51,8 +51,11 @@ jobs:
           fi
 
       - name: Push commit and tag
+        # cz creates a lightweight tag, which --follow-tags won't push.
         if: steps.bump.outputs.bumped == 'true'
-        run: git push origin main --follow-tags
+        run: |
+          git push origin main
+          git push origin "v${{ steps.bump.outputs.version }}"
 
       - name: Extract this version's changelog section
         if: steps.bump.outputs.bumped == 'true'
