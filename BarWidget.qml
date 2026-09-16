@@ -8,7 +8,13 @@ Panel {
   moduleName: "vinicgobbi.vpn"
   ipcTarget: "vinicgobbi.vpn"
 
-  readonly property color foreground: bar ? bar.barForeground : Color.foreground
+  readonly property color foreground: bar ? bar.foreground : Color.foreground
+  // Bar.qml fades barForeground toward the background whenever the bar
+  // itself recedes (e.g. useTransparentForeground) — appropriate for the
+  // small icon sitting in the bar, but not for this panel's own content,
+  // which stays on the stable `foreground` above. Matches the native
+  // tailscale panel's foreground/barIconColor split.
+  readonly property color barForeground: bar ? bar.barForeground : Color.foreground
   readonly property color dim: Qt.darker(foreground, 1.55)
   readonly property color accent: Color.accent
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
@@ -18,7 +24,7 @@ Panel {
   }
 
   readonly property string vpnIcon: "󰖂"
-  readonly property color iconColor: service.anyConnected ? foreground : dim
+  readonly property color iconColor: service.anyConnected ? barForeground : Qt.darker(barForeground, 1.55)
   readonly property string tooltipText: "Tailscale: " + service.tailscaleDetail +
     (service.tailscaleUp && service.tailscaleIp !== "" ? " (" + service.tailscaleIp + ")" : "") +
     (service.tailscaleUp ? "\n" + service.tailscaleOnlinePeerCount + "/" + service.tailscalePeerCount + " devices online" : "") +
