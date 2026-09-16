@@ -8,7 +8,7 @@ Panel {
   moduleName: "vinicgobbi.vpn"
   ipcTarget: "vinicgobbi.vpn"
 
-  readonly property color foreground: bar ? bar.barForeground : Color.foreground
+  readonly property color foreground: bar ? bar.foreground : Color.foreground
   readonly property color dim: Qt.darker(foreground, 1.55)
   readonly property color accent: Color.accent
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
