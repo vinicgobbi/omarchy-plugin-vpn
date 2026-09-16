@@ -1,12 +1,10 @@
 name: Bump version
 
-# Runs after CI finishes on main. Only bumps when CI passed and the commit
-# that triggered it isn't itself a previous bump (avoids looping).
+# Manual only: trigger from the Actions tab (or `gh workflow run bump.yml`)
+# when you've decided main is ready to release. Always bumps main itself,
+# regardless of which branch/ref the dispatch was run from.
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches: [main]
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -15,9 +13,6 @@ jobs:
   bump:
     name: Bump version and changelog
     runs-on: ubuntu-latest
-    if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      !startsWith(github.event.workflow_run.head_commit.message, 'bump:')
     steps:
       - name: Check out main
         uses: actions/checkout@v4

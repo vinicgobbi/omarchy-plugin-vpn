@@ -177,21 +177,23 @@ Item {
   // Builds and runs a small shell helper that: sets the (non secret)
   // username on the connection, writes only the secrets that were actually
   // requested to a 0600 temp file, activates the connection with that file,
-  // then removes it. Secret values are streamed over stdin so they never
-  // appear in the process argument list (visible via /proc or ps to other
-  // local users); only the uuid, flags, username, and save choice travel as
-  // arguments.
+  // then removes it (via an EXIT trap installed right after the file is
+  // created, so it's gone on every exit path — success, nmcli failure, or
+  // anything else — not just the one after a successful `connection up`).
+  // Secret values are streamed over stdin so they never appear in the
+  // process argument list (visible via /proc or ps to other local users);
+  // only the uuid, flags, username, and save choice travel as arguments.
   //
   // When `save` is true and the connection comes up successfully, the
   // secrets just used are additionally written onto the connection itself
   // (password-flags/cert-pass-flags set to 0, the "saved" value) so the next
-  // activation won't need them at all. That nmcli call does carry the
-  // secret as a plain argument — briefly visible via ps to other local
-  // users — which is unavoidable with nmcli's modify command; it only runs
-  // for the fields the user opted into saving. When `save` is false, a
-  // username that wasn't already saved is removed again after connecting so
-  // the next attempt still asks for everything, matching what the user
-  // chose.
+  // activation won't need them at all. That's done via `nmcli connection
+  // edit`'s non-interactive stdin mode (each `set ...` line piped in) rather
+  // than `connection modify`'s command-line arguments, so the secret is
+  // never on argv either — same guarantee as the initial connect. When
+  // `save` is false, a username that wasn't already saved is removed again
+  // after connecting so the next attempt still asks for everything,
+  // matching what the user chose.
   function submitCredentials(username, password, keyPassword, save) {
     if (root.credUuid === "") return
     var hasPass = root.credNeedPassword && password !== ""
@@ -213,17 +215,16 @@ Item {
       "if [ -n \"$username\" ]; then nmcli connection modify \"$uuid\" +vpn.data username=\"$username\" >/dev/null; fi\n" +
       "f=$(mktemp)\n" +
       "chmod 600 \"$f\"\n" +
+      "trap 'rm -f \"$f\"' EXIT\n" +
       "if [ \"$haspass\" = \"1\" ]; then IFS= read -r pass; printf 'vpn.secrets.password:%s\\n' \"$pass\" >> \"$f\"; fi\n" +
       "if [ \"$haskey\" = \"1\" ]; then IFS= read -r keypass; printf 'vpn.secrets.cert-pass:%s\\n' \"$keypass\" >> \"$f\"; fi\n" +
-      "nmcli connection up uuid \"$uuid\" passwd-file \"$f\"\n" +
-      "rc=$?\n" +
-      "rm -f \"$f\"\n" +
+      "if nmcli connection up uuid \"$uuid\" passwd-file \"$f\"; then rc=0; else rc=$?; fi\n" +
       "if [ \"$rc\" = \"0\" ]; then\n" +
       "  if [ \"$save\" = \"1\" ]; then\n" +
-      "    args=()\n" +
-      "    if [ \"$haspass\" = \"1\" ]; then args+=(+vpn.data password-flags=0 +vpn.secrets \"password=$pass\"); fi\n" +
-      "    if [ \"$haskey\" = \"1\" ]; then args+=(+vpn.data cert-pass-flags=0 +vpn.secrets \"cert-pass=$keypass\"); fi\n" +
-      "    if [ \"${#args[@]}\" -gt 0 ]; then nmcli connection modify \"$uuid\" \"${args[@]}\" >/dev/null 2>&1 || true; fi\n" +
+      "    { if [ \"$haspass\" = \"1\" ]; then printf 'set vpn.data password-flags=0\\nset vpn.secrets password=%s\\n' \"$pass\"; fi\n" +
+      "      if [ \"$haskey\" = \"1\" ]; then printf 'set vpn.data cert-pass-flags=0\\nset vpn.secrets cert-pass=%s\\n' \"$keypass\"; fi\n" +
+      "      printf 'save\\nquit\\n'\n" +
+      "    } | nmcli connection edit uuid \"$uuid\" >/dev/null 2>&1 || true\n" +
       "  elif [ -n \"$username\" ] && [ \"$usernamewassaved\" != \"1\" ]; then\n" +
       "    nmcli connection modify \"$uuid\" -vpn.data username >/dev/null 2>&1 || true\n" +
       "  fi\n" +
