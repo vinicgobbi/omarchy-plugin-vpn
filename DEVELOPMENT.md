@@ -39,11 +39,13 @@ uvx --from commitizen cz commit
 ```
 
 Versioning is derived from that history, not chosen by hand: `manifest.json`'s
-`version` and `CHANGELOG.md` are only ever updated by `cz bump`, which the
-`Bump version` GitHub Actions workflow runs automatically on `main` after CI
-passes, if the commits since the last tag are eligible (any `feat`/`fix`/
-`BREAKING CHANGE` — see [`bump.yml`](.github/workflows/bump.yml)). It also
-tags the bump and publishes a GitHub release from the new changelog section.
+`version` and `CHANGELOG.md` are only ever updated by `cz bump`. Releasing is
+a deliberate, manual step — trigger the `Bump version` GitHub Actions
+workflow from the Actions tab (or `gh workflow run bump.yml`) when `main` is
+ready to release. It runs `cz bump --changelog` against `main`, and only
+pushes/tags/publishes a GitHub release if the commits since the last tag are
+actually eligible (any `feat`/`fix`/`BREAKING CHANGE` — see
+[`bump.yml`](.github/workflows/bump.yml)); otherwise it's a no-op.
 Don't hand-edit the version in `manifest.json` or write to `CHANGELOG.md`
 directly — run `cz bump` locally (`uvx --from commitizen cz bump --changelog`)
 only if you need to cut a release outside of that automation.
