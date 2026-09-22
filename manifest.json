@@ -3,8 +3,9 @@
   "id": "vinicgobbi.vpn",
   "name": "VPN Manager",
   "version": "0.1.0",
-  "author": "Vinicius",
+  "author": "vinicgobbi",
   "license": "MIT",
+  "homepage": "https://github.com/vinicgobbi/omarchy-plugin-vpn",
   "description": "Single bar icon and popup panel to view and toggle both Tailscale and NetworkManager OpenVPN connections.",
   "kinds": [
     "bar-widget"
