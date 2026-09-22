@@ -1,5 +1,7 @@
 # Contributing
 
+## Local setup
+
 The source of truth for this plugin lives here, **not** under
 `~/.config/omarchy/plugins/`. That directory is watched by Omarchy and
 hot-reloads on every file change, so editing there directly means a reload
@@ -26,6 +28,27 @@ scripts/dev-uninstall.sh
 Both scripts read the plugin id from `manifest.json`, so they keep working
 if the plugin is ever renamed.
 
+Validate the manifest before publishing:
+
+```bash
+omarchy plugin validate .
+```
+
+## Structure
+
+- `manifest.json` — plugin metadata (id, kind, entry point) and the
+  `barWidget.defaults` / `schema` for the refresh-interval setting
+- `BarWidget.qml` — the bar icon and popup: Tailscale row, the
+  NetworkManager VPN list (toggle/rename/delete), inline credential
+  prompts, the import flow, and the STATUS section
+- `VpnService.qml` — polls Tailscale and NetworkManager and exposes a
+  single merged model; also detects when a connection needs credentials
+  NetworkManager doesn't already have cached and figures out which fields
+  are actually missing
+- `import-profile` — shell script the popup shells out to: picks a
+  `.ovpn`/`.conf` file via `omarchy file select` and imports it into
+  NetworkManager
+
 ## CI
 
 `.github/workflows/ci.yml` runs on every push (including to `main`) and
@@ -33,7 +56,7 @@ on pull requests: it validates `manifest.json`, runs Shellcheck on the
 shell scripts, and lints every `.qml` file with `qmllint`, so a syntax
 error can't land on `main`.
 
-## Commits and versioning
+## Commits and releases
 
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)
 (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, ...), enforced and managed
@@ -45,14 +68,12 @@ hand:
 uvx --from commitizen cz commit
 ```
 
-Versioning is derived from that history, not chosen by hand: `manifest.json`'s
-`version` and `CHANGELOG.md` are only ever updated by `cz bump`. Releasing is
-a deliberate, manual step — trigger the `Bump version` GitHub Actions
-workflow from the Actions tab (or `gh workflow run bump.yml`) when `main` is
-ready to release. It runs `cz bump --changelog` against `main`, and only
-pushes/tags/publishes a GitHub release if the commits since the last tag are
-actually eligible (any `feat`/`fix`/`BREAKING CHANGE` — see
-[`bump.yml`](.github/workflows/bump.yml)); otherwise it's a no-op.
-Don't hand-edit the version in `manifest.json` or write to `CHANGELOG.md`
-directly — run `cz bump` locally (`uvx --from commitizen cz bump --changelog`)
-only if you need to cut a release outside of that automation.
+Releases are manual: run the `Bump version` workflow from the Actions tab
+(`.github/workflows/bump.yml`, or `gh workflow run bump.yml`) when `main`
+is ready to release. It runs `cz bump --changelog` against `main`, and
+only pushes/tags/publishes a GitHub release if the commits since the last
+tag are actually eligible (any `feat`/`fix`/`BREAKING CHANGE`); otherwise
+it's a no-op. Don't hand-edit the version in `manifest.json` or write to
+`CHANGELOG.md` directly — run `cz bump` locally
+(`uvx --from commitizen cz bump --changelog`) only if you need to cut a
+release outside of that automation.
