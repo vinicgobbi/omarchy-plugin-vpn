@@ -1,4 +1,4 @@
-# VPN Manager
+# omarchy-plugin-vpn
 
 An [Omarchy](https://omarchy.org/) bar widget that gives you a single icon
 and popup panel to view and toggle both **Tailscale** and any
@@ -43,6 +43,32 @@ inline credential prompts when a connection needs them.
   connect `.ovpn` profiles.
 - `omarchy file select` (bundled with Omarchy) for the import file picker.
 
+## Usage
+
+- Click the VPN icon in the bar to open the panel.
+- **Tailscale** row: flip the switch to connect/disconnect (or log in, if
+  you're logged out).
+- **VPN (NetworkManager)** section: one row per connection NetworkManager
+  knows about — flip a switch to connect/disconnect it.
+- Click **Import .ovpn profile…** to pick a `.ovpn`/`.conf` file from the
+  desktop file picker; it's imported into NetworkManager and shows up in the
+  list right away. Opening the native file picker closes this popup (same as
+  clicking outside it) — the widget reopens itself automatically once the
+  import finishes, so you land back on the result instead of having to
+  reopen it by hand. If the file carries its own DNS server(s) or search
+  domain(s), a card appears asking whether to apply them to the imported
+  connection — **Apply (recommended)** sets `ipv4.dns`/`ipv4.dns-search` on
+  it, **Skip** leaves it as NetworkManager imported it.
+- Each profile row has a pencil (rename) and trash (delete) icon next to its
+  switch. Rename expands an inline field; delete expands an inline
+  confirmation — both can be cancelled without effect.
+- If a connection needs credentials, a form expands inline under that row
+  asking only for what's missing (username, password, and/or private key
+  password). Submit to connect, or cancel to back out.
+- Press `r` while the panel is focused to force a refresh.
+- The **STATUS** section (only shown when something is connected) lists IP,
+  DNS, gateway, and uptime per connection.
+
 ## Install
 
 ```bash
@@ -76,32 +102,6 @@ omarchy plugin update vinicgobbi.vpn
 ```bash
 omarchy plugin remove vinicgobbi.vpn
 ```
-
-## Usage
-
-- Click the VPN icon in the bar to open the panel.
-- **Tailscale** row: flip the switch to connect/disconnect (or log in, if
-  you're logged out).
-- **VPN (NetworkManager)** section: one row per connection NetworkManager
-  knows about — flip a switch to connect/disconnect it.
-- Click **Import .ovpn profile…** to pick a `.ovpn`/`.conf` file from the
-  desktop file picker; it's imported into NetworkManager and shows up in the
-  list right away. Opening the native file picker closes this popup (same as
-  clicking outside it) — the widget reopens itself automatically once the
-  import finishes, so you land back on the result instead of having to
-  reopen it by hand. If the file carries its own DNS server(s) or search
-  domain(s), a card appears asking whether to apply them to the imported
-  connection — **Apply (recommended)** sets `ipv4.dns`/`ipv4.dns-search` on
-  it, **Skip** leaves it as NetworkManager imported it.
-- Each profile row has a pencil (rename) and trash (delete) icon next to its
-  switch. Rename expands an inline field; delete expands an inline
-  confirmation — both can be cancelled without effect.
-- If a connection needs credentials, a form expands inline under that row
-  asking only for what's missing (username, password, and/or private key
-  password). Submit to connect, or cancel to back out.
-- Press `r` while the panel is focused to force a refresh.
-- The **STATUS** section (only shown when something is connected) lists IP,
-  DNS, gateway, and uptime per connection.
 
 ## Settings
 
