@@ -47,29 +47,25 @@ omarchy plugin validate .
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every push (including to `main`) and
-on pull requests: it validates `manifest.json`, runs Shellcheck on the
-shell scripts, and lints every `.qml` file with `qmllint`, so a syntax
-error can't land on `main`.
+`.github/workflows/ci.yml` runs on every push to `main` (and on pull
+requests): it validates `manifest.json`, runs Shellcheck on any shell
+scripts, and lints every `.qml` file with `qmllint`, so a syntax error
+can't land on `main`.
 
 ## Commits and releases
 
-Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)
-(`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, ...), enforced and managed
-with [Commitizen](https://commitizen-tools.github.io/commitizen/) (config in
-`.cz.toml`). To write a commit interactively instead of typing the prefix by
-hand:
+Commits follow [Conventional Commits](https://www.conventionalcommits.org/)
+and are checked with [Commitizen](https://commitizen-tools.github.io/commitizen/):
 
 ```bash
-uvx --from commitizen cz commit
+pipx install commitizen
+cz commit   # interactive, conventional-commits-compliant commit
 ```
 
-Releases are manual: run the `Bump version` workflow from the Actions tab
-(`.github/workflows/bump.yml`, or `gh workflow run bump.yml`) when `main`
-is ready to release. It runs `cz bump --changelog` against `main`, and
-only pushes/tags/publishes a GitHub release if the commits since the last
-tag are actually eligible (any `feat`/`fix`/`BREAKING CHANGE`); otherwise
-it's a no-op. Don't hand-edit the version in `manifest.json` or write to
-`CHANGELOG.md` directly — run `cz bump` locally
-(`uvx --from commitizen cz bump --changelog`) only if you need to cut a
-release outside of that automation.
+Releases are manual: run `.github/workflows/release.yml` from the
+Actions tab (`Run workflow`, on `main`). It only runs when dispatched
+against `main`, and uses Commitizen to bump `manifest.json`'s version
+and the changelog based on the commit types since the last release,
+tags it (`vX.Y.Z`), and publishes a GitHub Release with the changelog
+entry. If there's nothing to bump (no `feat`/`fix`/`BREAKING CHANGE`
+commits since the last release), it's a no-op — no tag, no release.

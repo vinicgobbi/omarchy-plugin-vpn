@@ -3,7 +3,7 @@ name = "cz_conventional_commits"
 version = "0.1.0"
 tag_format = "v$version"
 version_files = [
-    "manifest.json:version"
+    "manifest.json"
 ]
 update_changelog_on_bump = true
 major_version_zero = true
