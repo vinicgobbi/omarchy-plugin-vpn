@@ -1,4 +1,4 @@
-# Development
+# Contributing
 
 The source of truth for this plugin lives here, **not** under
 `~/.config/omarchy/plugins/`. That directory is watched by Omarchy and
@@ -25,6 +25,13 @@ scripts/dev-uninstall.sh
 
 Both scripts read the plugin id from `manifest.json`, so they keep working
 if the plugin is ever renamed.
+
+## CI
+
+`.github/workflows/ci.yml` runs on every push (including to `main`) and
+on pull requests: it validates `manifest.json`, runs Shellcheck on the
+shell scripts, and lints every `.qml` file with `qmllint`, so a syntax
+error can't land on `main`.
 
 ## Commits and versioning
 

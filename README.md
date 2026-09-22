@@ -5,7 +5,7 @@ and popup panel to view and toggle both **Tailscale** and any
 **NetworkManager VPN connection** (OpenVPN, WireGuard, etc.), including
 inline credential prompts when a connection needs them.
 
-## Features
+## What it does
 
 - One bar icon that lights up when anything is connected.
 - **Tailscale**: toggle up/down, see connection status, your Tailscale IP,
@@ -29,6 +29,10 @@ inline credential prompts when a connection needs them.
 - Detects when you're not set as the Tailscale operator and shows the
   `sudo tailscale set --operator=<user>` command to fix it.
 - Configurable refresh interval.
+
+## Preview
+
+![VPN Manager popup](preview.png)
 
 ## Requirements
 
@@ -59,6 +63,18 @@ if something doesn't pick up, force it with:
 
 ```bash
 omarchy-shell shell rescanPlugins
+```
+
+## Update
+
+```bash
+omarchy plugin update vinicgobbi.vpn
+```
+
+## Uninstall
+
+```bash
+omarchy plugin remove vinicgobbi.vpn
 ```
 
 ## Usage
@@ -96,14 +112,7 @@ Configurable from the bar widget's settings (or directly in
 |---|---|---|
 | `refreshIntervalSec` | How often (in seconds, 3–300) the widget polls Tailscale/NetworkManager status | `10` |
 
-## Updating / Removing
-
-```bash
-omarchy plugin update vinicgobbi.vpn
-omarchy plugin remove vinicgobbi.vpn
-```
-
-## Troubleshooting
+## Notes
 
 - **"Tailscale: você não é o operator configurado"** — Tailscale commands
   need root or an operator user. Run the suggested
@@ -118,6 +127,11 @@ omarchy plugin remove vinicgobbi.vpn
   is installed (`nmcli connection import type openvpn file <path>` needs
   it), and that the file is a valid OpenVPN client config.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, the plugin's
+file structure, and the commit/release process.
+
 ## License
 
-MIT
+[MIT](LICENSE)
