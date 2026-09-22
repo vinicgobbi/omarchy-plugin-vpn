@@ -39,18 +39,21 @@ jobs:
           # Omarchy/Quickshell install, which isn't available here — so import
           # resolution and everything that cascades from it (unqualified
           # access, unresolved types/properties, required-property checks on
-          # types qmllint couldn't resolve, Process's onExited signature) are
-          # disabled. Category names match qmllint 6.4 (what ubuntu-latest's
-          # qt6-declarative-dev-tools ships) — verified against that exact
-          # version in a matching container, not just locally, since a newer
-          # Qt renames/splits several of these. That still leaves qmllint
-          # doing real syntax validation: a genuinely malformed file fails
-          # with a "Expected token" error and non-zero exit regardless of
-          # these flags.
+          # types qmllint couldn't resolve, Process's onExited signature,
+          # aliases into a component qmllint can't fully resolve outside that
+          # install) are disabled. Category names match qmllint 6.4 (what
+          # ubuntu-latest's qt6-declarative-dev-tools ships) — verified
+          # against that exact version in a matching container, not just
+          # locally, since a newer Qt renames/splits several of these (e.g.
+          # 6.10 renames --alias to --unresolved-alias). That still leaves
+          # qmllint doing real syntax validation: a genuinely malformed file
+          # fails with a "Expected token" error and non-zero exit regardless
+          # of these flags.
           find . -name '*.qml' -not -path './.git/*' -print0 | xargs -0 "$QMLLINT" \
             --import disable \
             --unqualified disable \
             --type disable \
             --property disable \
             --required disable \
-            --signal disable
+            --signal disable \
+            --alias disable
