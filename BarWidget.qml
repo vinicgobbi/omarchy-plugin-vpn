@@ -431,8 +431,7 @@ Panel {
                     width: (parent.width - Style.space(8)) / 2
                     height: Style.space(32)
                     radius: Style.cornerRadius
-                    color: dnsApplyMouse.containsMouse
-                      ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.18) : Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.10)
+                    color: Util.alpha(root.accent, dnsApplyMouse.containsMouse ? 0.18 : 0.10)
                     border.width: Style.normalBorderWidth
                     border.color: root.accent
 
