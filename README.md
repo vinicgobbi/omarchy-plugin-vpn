@@ -75,22 +75,6 @@ inline credential prompts when a connection needs them.
 omarchy plugin add https://github.com/vinicgobbi/omarchy-plugin-vpn.git --enable
 ```
 
-This clones the plugin into `~/.config/omarchy/plugins/vinicgobbi.vpn/` and
-adds it to your bar. If you'd rather add it manually:
-
-```bash
-git clone https://github.com/vinicgobbi/omarchy-plugin-vpn.git \
-  ~/.config/omarchy/plugins/vinicgobbi.vpn
-omarchy plugin enable vinicgobbi.vpn
-```
-
-Saving changes under `~/.config/omarchy/plugins/` hot-reloads automatically;
-if something doesn't pick up, force it with:
-
-```bash
-omarchy-shell shell rescanPlugins
-```
-
 ## Update
 
 ```bash
