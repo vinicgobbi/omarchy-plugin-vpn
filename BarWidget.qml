@@ -358,6 +358,7 @@ Panel {
 
                 Text {
                   width: parent.width
+                  textFormat: Text.PlainText
                   text: "Apply DNS/domain from “" + service.importDnsPromptName + "”?"
                   wrapMode: Text.Wrap
                   color: root.foreground
@@ -369,6 +370,7 @@ Panel {
                 Text {
                   width: parent.width
                   visible: service.importDnsList.length > 0
+                  textFormat: Text.PlainText
                   text: "DNS: " + service.importDnsList.join(", ")
                   wrapMode: Text.Wrap
                   color: root.dim
@@ -379,6 +381,7 @@ Panel {
                 Text {
                   width: parent.width
                   visible: service.importDomainList.length > 0
+                  textFormat: Text.PlainText
                   text: "Domain: " + service.importDomainList.join(", ")
                   wrapMode: Text.Wrap
                   color: root.dim
@@ -487,6 +490,7 @@ Panel {
                       anchors.verticalCenter: parent.verticalCenter
                       spacing: 0
                       Text {
+                        textFormat: Text.PlainText
                         text: profile.name
                         color: root.foreground
                         font.family: root.fontFamily
@@ -736,6 +740,7 @@ Panel {
 
                     Text {
                       width: parent.width
+                      textFormat: Text.PlainText
                       text: "Delete “" + root.pendingDeleteName + "”? This can't be undone."
                       wrapMode: Text.Wrap
                       color: root.foreground
@@ -815,6 +820,7 @@ Panel {
                       width: Style.space(70)
                     }
                     Text {
+                      textFormat: Text.PlainText
                       text: service.tailscaleIp || "—"
                       color: root.foreground
                       font.family: root.fontFamily
@@ -835,6 +841,7 @@ Panel {
                       width: Style.space(70)
                     }
                     Text {
+                      textFormat: Text.PlainText
                       text: service.tailscaleDns || "—"
                       color: root.foreground
                       font.family: root.fontFamily
@@ -884,6 +891,7 @@ Panel {
                           color: modelData.online ? root.accent : root.dim
                         }
                         Text {
+                          textFormat: Text.PlainText
                           text: modelData.name + (modelData.ip ? " · " + modelData.ip : "")
                           color: modelData.online ? root.foreground : root.dim
                           font.family: root.fontFamily
@@ -911,6 +919,7 @@ Panel {
                     spacing: Style.space(4)
 
                     Text {
+                      textFormat: Text.PlainText
                       text: ovStatusDelegate.modelData.name
                       color: root.foreground
                       font.family: root.fontFamily
@@ -931,6 +940,7 @@ Panel {
                         width: Style.space(70)
                       }
                       Text {
+                        textFormat: Text.PlainText
                         text: ovStatusDelegate.modelData.ip || "—"
                         color: root.foreground
                         font.family: root.fontFamily
@@ -951,6 +961,7 @@ Panel {
                         width: Style.space(70)
                       }
                       Text {
+                        textFormat: Text.PlainText
                         text: ovStatusDelegate.modelData.dns || "—"
                         color: root.foreground
                         font.family: root.fontFamily
@@ -971,6 +982,7 @@ Panel {
                         width: Style.space(70)
                       }
                       Text {
+                        textFormat: Text.PlainText
                         text: ovStatusDelegate.modelData.gateway || "—"
                         color: root.foreground
                         font.family: root.fontFamily
