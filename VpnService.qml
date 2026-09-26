@@ -125,7 +125,16 @@ Item {
 
   function requestCredentials(uuid) {
     root._pendingCredUuid = uuid
-    ovDetailProcess.command = ["nmcli", "-t", "-f", "vpn.data", "connection", "show", uuid]
+    // Besides vpn.data, report whether the profile's private key file is
+    // encrypted: a freshly imported profile usually has no cert-pass-flags
+    // at all, yet NetworkManager still demands vpn.secrets.cert-pass when
+    // the key needs a passphrase, so the flags alone can't tell us.
+    ovDetailProcess.command = ["bash", "-c",
+      "out=$(nmcli -t -f vpn.data connection show uuid \"$1\") || exit $?\n" +
+      "printf '%s\\n' \"$out\"\n" +
+      "key=$(printf '%s' \"$out\" | sed -n 's/.*[:,] *key = \\([^,]*\\).*/\\1/p')\n" +
+      "if [ -n \"$key\" ] && [ -r \"$key\" ] && grep -aq ENCRYPTED \"$key\"; then echo KEY_ENCRYPTED; fi\n",
+      "_", uuid]
     ovDetailProcess.running = true
   }
 
@@ -543,7 +552,9 @@ Item {
       // all, since then we genuinely don't know what's missing.
       var needUser = true, needPass = true, needKey = true, existingUser = ""
       if (exitCode === 0) {
-        var text = String(ovDetailOut.text || "")
+        var lines = String(ovDetailOut.text || "").split("\n")
+        var text = lines[0]
+        var keyEncrypted = lines.indexOf("KEY_ENCRYPTED") >= 0
         var idx = text.indexOf(":")
         var body = idx >= 0 ? text.substring(idx + 1) : text
         var fields = {}
@@ -563,7 +574,9 @@ Item {
         var passFlags = fields.hasOwnProperty("password-flags") ? parseInt(fields["password-flags"], 10) : NaN
         var keyFlags = fields.hasOwnProperty("cert-pass-flags") ? parseInt(fields["cert-pass-flags"], 10) : NaN
         needPass = !isNaN(passFlags) && (passFlags & NOT_REQUIRED) === 0 && (passFlags & ASK_EVERY_TIME) !== 0
-        needKey = !isNaN(keyFlags) && (keyFlags & NOT_REQUIRED) === 0 && (keyFlags & ASK_EVERY_TIME) !== 0
+        needKey = isNaN(keyFlags)
+          ? keyEncrypted
+          : (keyFlags & NOT_REQUIRED) === 0 && (keyFlags & ASK_EVERY_TIME) !== 0
       }
       var uuid = root._pendingCredUuid
       var profile = root.ovProfiles.find(function(p) { return p.uuid === uuid })
@@ -606,9 +619,23 @@ Item {
         root.credError = ""
         root.lastError = ""
       } else {
-        root.credError = timedOut
-          ? "Connection attempt timed out. Check your credentials and try again."
-          : String(ovCredErr.text || "Authentication failed").trim()
+        var errText = String(ovCredErr.text || "").trim()
+        // NetworkManager asked for a secret the dialog didn't offer (our
+        // guess from vpn.data was wrong): show that field and let the user
+        // retry instead of surfacing nmcli's raw "not given" error.
+        var missingKey = !root.credNeedKeyPassword && /vpn\.secrets\.cert-pass/.test(errText)
+        var missingPass = !root.credNeedPassword && /vpn\.secrets\.password/.test(errText)
+        if (!timedOut && (missingKey || missingPass)) {
+          if (missingKey) root.credNeedKeyPassword = true
+          if (missingPass) root.credNeedPassword = true
+          root.credError = missingKey
+            ? "This profile's private key is encrypted. Enter its password."
+            : "This profile needs a password."
+        } else {
+          root.credError = timedOut
+            ? "Connection attempt timed out. Check your credentials and try again."
+            : (errText || "Authentication failed")
+        }
       }
       settleRefresh.restart()
     }
