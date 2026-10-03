@@ -1,12 +1,27 @@
 name: Bump version and release
 
+# Runs by itself after CI passes on a push to main (and can still be run by
+# hand from the Actions tab). Commitizen reads the commits since the last
+# release: feat/fix/BREAKING CHANGE bump manifest.json's version, update the
+# changelog, tag vX.Y.Z and publish a GitHub Release; anything else
+# (docs, ci, refactor, …) is a no-op. The bump commit is pushed with
+# GITHUB_TOKEN, which doesn't start other workflows, so it can't loop.
 on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch: {}
 
 jobs:
   bump-version:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       !startsWith(github.event.workflow_run.head_commit.message, 'bump:'))
     concurrency:
       group: release
       cancel-in-progress: false
@@ -16,6 +31,7 @@ jobs:
       - name: Check out
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          ref: main
           fetch-depth: 0
           token: "${{ secrets.GITHUB_TOKEN }}"
 
@@ -27,8 +43,10 @@ jobs:
           changelog_increment_filename: body.md
           no_raise: "21"
 
+      # The action always reports a version, the current one when there was
+      # nothing to bump: only release when it actually changed.
       - name: Release
-        if: steps.cz.outputs.version != ''
+        if: steps.cz.outputs.version != steps.cz.outputs.previous_version
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           body_path: "body.md"

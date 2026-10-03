@@ -62,10 +62,14 @@ pipx install commitizen
 cz commit   # interactive, conventional-commits-compliant commit
 ```
 
-Releases are manual: run `.github/workflows/release.yml` from the
-Actions tab (`Run workflow`, on `main`). It only runs when dispatched
-against `main`, and uses Commitizen to bump `manifest.json`'s version
-and the changelog based on the commit types since the last release,
-tags it (`vX.Y.Z`), and publishes a GitHub Release with the changelog
-entry. If there's nothing to bump (no `feat`/`fix`/`BREAKING CHANGE`
-commits since the last release), it's a no-op — no tag, no release.
+Releases are automatic: `.github/workflows/release.yml` runs after CI
+passes on every push to `main` (it can also be run by hand from the
+Actions tab, on `main`). It uses Commitizen to bump `manifest.json`'s
+version and the changelog based on the commit types since the last
+release, tags it (`vX.Y.Z`), and publishes a GitHub Release with the
+changelog entry. If there's nothing to bump (no `feat`/`fix`/`BREAKING
+CHANGE` commits since the last release), it's a no-op — no tag, no
+release.
+
+When it does bump, the workflow pushes a `bump: version …` commit to
+`main`, so run `git pull` before your next push.
