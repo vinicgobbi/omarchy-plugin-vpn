@@ -221,6 +221,12 @@ Item {
       "username=\"$4\"\n" +
       "save=\"$5\"\n" +
       "usernamewassaved=\"$6\"\n" +
+      // `nmcli connection edit` reads "set vpn.secrets password=…" as a
+      // list of options: an unescaped comma makes it reject the whole value
+      // (the password silently wasn't saved), and a backslash is an escape.
+      // Escaping \ , and spaces stores it exactly; a trailing space can't be
+      // stored at all, so that one isn't saved and the UI says so.
+      "esc() { local s=${1//\\\\/\\\\\\\\}; s=${s//,/\\\\,}; s=${s// /\\\\ }; printf '%s' \"$s\"; }\n" +
       "if [ -n \"$username\" ]; then nmcli connection modify \"$uuid\" +vpn.data username=\"$username\" >/dev/null; fi\n" +
       "f=$(mktemp)\n" +
       "chmod 600 \"$f\"\n" +
@@ -230,10 +236,15 @@ Item {
       "if nmcli connection up uuid \"$uuid\" passwd-file \"$f\"; then rc=0; else rc=$?; fi\n" +
       "if [ \"$rc\" = \"0\" ]; then\n" +
       "  if [ \"$save\" = \"1\" ]; then\n" +
-      "    { if [ \"$haspass\" = \"1\" ]; then printf 'set vpn.data password-flags=0\\nset vpn.secrets password=%s\\n' \"$pass\"; fi\n" +
-      "      if [ \"$haskey\" = \"1\" ]; then printf 'set vpn.data cert-pass-flags=0\\nset vpn.secrets cert-pass=%s\\n' \"$keypass\"; fi\n" +
+      "    skip=0\n" +
+      "    if [ \"$haspass\" = \"1\" ]; then case \"$pass\" in *[[:space:]]) skip=1;; esac; fi\n" +
+      "    if [ \"$haskey\" = \"1\" ]; then case \"$keypass\" in *[[:space:]]) skip=1;; esac; fi\n" +
+      "    if [ \"$skip\" = \"1\" ]; then echo SAVE_SKIPPED_TRAILING_SPACE; else\n" +
+      "    { if [ \"$haspass\" = \"1\" ]; then printf 'set vpn.data password-flags=0\\nset vpn.secrets password=%s\\n' \"$(esc \"$pass\")\"; fi\n" +
+      "      if [ \"$haskey\" = \"1\" ]; then printf 'set vpn.data cert-pass-flags=0\\nset vpn.secrets cert-pass=%s\\n' \"$(esc \"$keypass\")\"; fi\n" +
       "      printf 'save\\nquit\\n'\n" +
       "    } | nmcli connection edit uuid \"$uuid\" >/dev/null 2>&1 || true\n" +
+      "    fi\n" +
       "  elif [ -n \"$username\" ] && [ \"$usernamewassaved\" != \"1\" ]; then\n" +
       "    nmcli connection modify \"$uuid\" -vpn.data username >/dev/null 2>&1 || true\n" +
       "  fi\n" +
@@ -617,7 +628,9 @@ Item {
         root.credDialogOpen = false
         root.credUuid = ""
         root.credError = ""
-        root.lastError = ""
+        root.lastError = /SAVE_SKIPPED_TRAILING_SPACE/.test(String(ovCredOut.text || ""))
+          ? "Connected, but the password wasn't saved: NetworkManager can't store one that ends with a space. You'll be asked again next time."
+          : ""
       } else {
         var errText = String(ovCredErr.text || "").trim()
         // NetworkManager asked for a secret the dialog didn't offer (our

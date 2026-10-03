@@ -231,6 +231,7 @@ Panel {
                   }
                   Text {
                     text: service.tailscaleUp ? "Connected" : service.tailscaleDetail
+                    textFormat: Text.PlainText
                     color: root.dim
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.caption
@@ -264,6 +265,7 @@ Panel {
               Text {
                 width: parent.width
                 text: "Tailscale operator isn't " + service.tailscaleCurrentUser + " — commands will need sudo."
+                textFormat: Text.PlainText
                 wrapMode: Text.Wrap
                 color: bar ? bar.urgent : Color.urgent
                 font.family: root.fontFamily
@@ -501,6 +503,7 @@ Panel {
                       Text {
                         text: profile.active ? "Connected" + (profile.device ? " · " + profile.device : "")
                           : (profile.connecting ? "Connecting…" : "Disconnected")
+                        textFormat: Text.PlainText
                         color: root.dim
                         font.family: root.fontFamily
                         font.pixelSize: Style.font.caption
@@ -571,6 +574,7 @@ Panel {
                       visible: service.credError !== ""
                       width: parent.width
                       text: service.credError
+                      textFormat: Text.PlainText
                       wrapMode: Text.Wrap
                       color: bar ? bar.urgent : Color.urgent
                       font.family: root.fontFamily
