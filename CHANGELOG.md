@@ -1,3 +1,9 @@
+## v0.1.2 (2026-10-03)
+
+### Fix
+
+- senha com vírgula não era salva (o nmcli edit rejeitava o valor em silêncio); agora a senha é escapada, e uma terminada em espaço, que o NetworkManager não grava, avisa que não foi salva; textos dinâmicos (erros do nmcli, Tailscale, dispositivo) exibidos como texto puro
+
 ## v0.1.1 (2026-09-26)
 
 ### Fix
