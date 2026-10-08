@@ -56,6 +56,9 @@ Item {
   property bool credNeedUsername: false
   property bool credNeedPassword: false
   property bool credNeedKeyPassword: false
+  // The profile has a private key we couldn't inspect (e.g. it lives under
+  // /root after a root-side import), so whether it's encrypted is unknown.
+  property bool credKeyUnknown: false
   property string credExistingUsername: ""
   property string credError: ""
   property bool credBusy: false
@@ -128,12 +131,15 @@ Item {
     // Besides vpn.data, report whether the profile's private key file is
     // encrypted: a freshly imported profile usually has no cert-pass-flags
     // at all, yet NetworkManager still demands vpn.secrets.cert-pass when
-    // the key needs a passphrase, so the flags alone can't tell us.
+    // the key needs a passphrase, so the flags alone can't tell us. A key we
+    // can't read (NetworkManager runs as root, we don't) is reported apart:
+    // it may well be encrypted, which only the activation attempt reveals.
     ovDetailProcess.command = ["bash", "-c",
       "out=$(nmcli -t -f vpn.data connection show uuid \"$1\") || exit $?\n" +
       "printf '%s\\n' \"$out\"\n" +
       "key=$(printf '%s' \"$out\" | sed -n 's/.*[:,] *key = \\([^,]*\\).*/\\1/p')\n" +
-      "if [ -n \"$key\" ] && [ -r \"$key\" ] && grep -aq ENCRYPTED \"$key\"; then echo KEY_ENCRYPTED; fi\n",
+      "if [ -n \"$key\" ] && [ -r \"$key\" ] && grep -aq ENCRYPTED \"$key\"; then echo KEY_ENCRYPTED; fi\n" +
+      "if [ -n \"$key\" ] && [ ! -r \"$key\" ]; then echo KEY_UNREADABLE; fi\n",
       "_", uuid]
     ovDetailProcess.running = true
   }
@@ -561,11 +567,12 @@ Item {
       // "username" key yet even though the auth type requires one. Fall
       // back to asking for everything only if vpn.data couldn't be read at
       // all, since then we genuinely don't know what's missing.
-      var needUser = true, needPass = true, needKey = true, existingUser = ""
+      var needUser = true, needPass = true, needKey = true, existingUser = "", keyUnknown = false
       if (exitCode === 0) {
         var lines = String(ovDetailOut.text || "").split("\n")
         var text = lines[0]
         var keyEncrypted = lines.indexOf("KEY_ENCRYPTED") >= 0
+        var keyUnreadable = lines.indexOf("KEY_UNREADABLE") >= 0
         var idx = text.indexOf(":")
         var body = idx >= 0 ? text.substring(idx + 1) : text
         var fields = {}
@@ -588,6 +595,7 @@ Item {
         needKey = isNaN(keyFlags)
           ? keyEncrypted
           : (keyFlags & NOT_REQUIRED) === 0 && (keyFlags & ASK_EVERY_TIME) !== 0
+        keyUnknown = isNaN(keyFlags) && keyUnreadable
       }
       var uuid = root._pendingCredUuid
       var profile = root.ovProfiles.find(function(p) { return p.uuid === uuid })
@@ -597,6 +605,7 @@ Item {
       root.credNeedUsername = needUser
       root.credNeedPassword = needPass
       root.credNeedKeyPassword = needKey
+      root.credKeyUnknown = keyUnknown
       root.credError = ""
       root.credBusy = false
       root.credDialogOpen = true
@@ -636,7 +645,10 @@ Item {
         // NetworkManager asked for a secret the dialog didn't offer (our
         // guess from vpn.data was wrong): show that field and let the user
         // retry instead of surfacing nmcli's raw "not given" error.
-        var missingKey = !root.credNeedKeyPassword && /vpn\.secrets\.cert-pass/.test(errText)
+        // A key we couldn't inspect gets nmcli's generic "No valid secrets"
+        // instead, which names no secret: that's the encrypted key too.
+        var missingKey = !root.credNeedKeyPassword &&
+          (/vpn\.secrets\.cert-pass/.test(errText) || (root.credKeyUnknown && /No valid secrets/i.test(errText)))
         var missingPass = !root.credNeedPassword && /vpn\.secrets\.password/.test(errText)
         if (!timedOut && (missingKey || missingPass)) {
           if (missingKey) root.credNeedKeyPassword = true
