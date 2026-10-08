@@ -1,3 +1,9 @@
+## v0.1.3 (2026-10-08)
+
+### Fix
+
+- handle unreadable private keys in OpenVPN profiles; added credKeyUnknown property and updated error handling
+
 ## v0.1.2 (2026-10-03)
 
 ### Fix
