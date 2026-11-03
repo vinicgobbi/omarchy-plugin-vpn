@@ -1,3 +1,9 @@
+## v0.1.4 (2026-11-03)
+
+### Fix
+
+- **seguranca**: arquivo temporário de senha fica no runtime dir
+
 ## v0.1.3 (2026-10-08)
 
 ### Fix
