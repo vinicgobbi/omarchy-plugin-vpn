@@ -234,7 +234,9 @@ Item {
       // stored at all, so that one isn't saved and the UI says so.
       "esc() { local s=${1//\\\\/\\\\\\\\}; s=${s//,/\\\\,}; s=${s// /\\\\ }; printf '%s' \"$s\"; }\n" +
       "if [ -n \"$username\" ]; then nmcli connection modify \"$uuid\" +vpn.data username=\"$username\" >/dev/null; fi\n" +
-      "f=$(mktemp)\n" +
+      // In the private, in-memory runtime dir when there is one: if this shell
+      // is killed before its trap runs, the secret doesn't sit in /tmp.
+      "f=$(mktemp -p \"${XDG_RUNTIME_DIR:-/tmp}\" 2>/dev/null || mktemp)\n" +
       "chmod 600 \"$f\"\n" +
       "trap 'rm -f \"$f\"' EXIT\n" +
       "if [ \"$haspass\" = \"1\" ]; then IFS= read -r pass; printf 'vpn.secrets.password:%s\\n' \"$pass\" >> \"$f\"; fi\n" +
